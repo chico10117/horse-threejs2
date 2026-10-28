@@ -99,7 +99,7 @@ window.addEventListener("keydown", (event) => {
 });
 
 for (const control of [wanderButton, gallopButton, soundButton, paceInput]) {
-  control.addEventListener("pointerup", (event) => {
+  control.addEventListener("click", (event) => {
     if (event.detail > 0) control.blur();
   });
 }
