@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running
 
-There is no build step, package.json, linter, or test suite. It's a static page: `index.html` + `styles.css` + ES modules under `src/` (entry `src/main.js`), with Three.js r170 vendored at `vendor/three.module.js`.
+There is no build step or package.json. CI (`.github/workflows/ci.yml`) runs `node --check`, an ESLint `no-undef` pass, and a Playwright smoke test (`tests/smoke.mjs`) on PRs and pushes to `main`, then deploys `main` to GitHub Pages. It's a static page: `index.html` + `styles.css` + ES modules under `src/` (entry `src/main.js`), with Three.js r170 vendored at `vendor/three.module.js`.
 
 It has to be served over HTTP, because the ES module and import map don't load from `file://`:
 
