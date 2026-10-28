@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Chestnut, walking — a procedural horse study</title>
+  <meta name="description" content="An interactive procedural horse, built from primitives in Three.js, walking a slow four-beat gait in a quiet paddock.">
+  <meta name="theme-color" content="#e9dfcc">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23efe6d5'/%3E%3Cpath d='M6 23c0-6 4-9 9-9l3-6 2 1-1 5c4 1 6 4 6 9z' fill='%238f4b2b'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Karla:ital,wght@0,300..700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three.module.js" } }
+  </script>
+</head>
+<body>
+  <main class="page">
+    <div id="stage" role="img" aria-label="An interactive 3D chestnut horse walking in a green meadow. Drag to orbit, scroll to zoom, and use W A S D to walk and steer."></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <header class="masthead">
+      <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span>A paddock study — No. 01</p>
+      <h1>Chestnut,<br><em>walking.</em></h1>
+      <p class="dek">A horse assembled from primitives and a four-beat walk. No model files, no motion capture — just geometry, light, and a little patience.</p>
+    </header>
+
+    <aside class="meter" aria-hidden="true">
+      <div class="meter-row">
+        <span class="meter-label">Gait</span>
+        <span class="meter-value" id="gaitValue">walk</span>
+      </div>
+      <div class="meter-row">
+        <span class="meter-label">Pace</span>
+        <span class="meter-value"><span id="paceValue">1.6</span><span class="unit">m/s</span></span>
+      </div>
+    </aside>
+
+    <div class="dock">
+      <div class="hints" aria-hidden="true">
+        <span class="hint"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>walk &amp; steer</span></span>
+        <span class="hint"><span class="pill">Drag</span><span>orbit</span></span>
+        <span class="hint"><span class="pill">Scroll</span><span>zoom</span></span>
+      </div>
+      <div class="actions">
+        <button class="wander" id="wanderButton" type="button" aria-pressed="true">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span>Wander</span>
+        </button>
+        <label class="pace" for="paceInput">
+          <span class="pace-label">Pace</span>
+          <input id="paceInput" type="range" min="0.6" max="2.6" step="0.1" value="1.6" aria-label="Walking pace">
+          <output id="paceOutput" for="paceInput">1.6</output>
+        </label>
+      </div>
+    </div>
+
+    <div class="loader" id="loader" role="status" aria-live="polite">
+      <span class="loader-line" aria-hidden="true"></span>
+      <p>Letting the horse in…</p>
+    </div>
+  </main>
+
+  <noscript><p class="no-script">This study needs JavaScript to draw the horse.</p></noscript>
+  <script type="module" src="horse.js"></script>
+</body>
+</html>
