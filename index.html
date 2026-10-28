@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Chestnut, walking — a procedural horse study</title>
-  <meta name="description" content="An interactive procedural horse, built from primitives in Three.js, walking a slow four-beat gait in a quiet paddock.">
-  <meta name="theme-color" content="#e9dfcc">
+  <title>Chestnut, walking — a small-planet horse study</title>
+  <meta name="description" content="An interactive procedural horse, built from primitives in Three.js, walking around a tiny planet under a full moon.">
+  <meta name="theme-color" content="#0e1836">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23efe6d5'/%3E%3Cpath d='M6 23c0-6 4-9 9-9l3-6 2 1-1 5c4 1 6 4 6 9z' fill='%238f4b2b'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,13 +17,13 @@
 </head>
 <body>
   <main class="page">
-    <div id="stage" role="img" aria-label="An interactive 3D chestnut horse walking in a green meadow. Drag to orbit, scroll to zoom, and use W A S D to walk and steer."></div>
+    <div id="stage" role="img" aria-label="An interactive 3D chestnut horse with a white mane walking around a tiny planet under a full moon. Drag to orbit, scroll to zoom, use W A S D to walk and steer, hold Shift or switch on Gallop to gallop, and press Space to jump."></div>
     <div class="vignette" aria-hidden="true"></div>
 
     <header class="masthead">
-      <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span>A paddock study — No. 01</p>
+      <p class="eyebrow"><span class="eyebrow-rule" aria-hidden="true"></span>A small-planet study — No. 01</p>
       <h1>Chestnut,<br><em>walking.</em></h1>
-      <p class="dek">A horse assembled from primitives and a four-beat walk. No model files, no motion capture — just geometry, light, and a little patience.</p>
+      <p class="dek">A chestnut mare with a moon-white mane, built from primitives and walking a planet scarcely larger than a house. No model files, no motion capture — just geometry, light, and a little patience.</p>
     </header>
 
     <aside class="meter" aria-hidden="true">
@@ -33,25 +33,35 @@
       </div>
       <div class="meter-row">
         <span class="meter-label">Pace</span>
-        <span class="meter-value"><span id="paceValue">1.6</span><span class="unit">m/s</span></span>
+        <span class="meter-value"><span id="paceValue">1.4</span><span class="unit">m/s</span></span>
       </div>
     </aside>
 
     <div class="dock">
       <div class="hints" aria-hidden="true">
         <span class="hint"><span class="keys"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span><span>walk &amp; steer</span></span>
+        <span class="hint"><span class="keys"><kbd>Shift</kbd></span><span>gallop</span></span>
+        <span class="hint"><span class="keys"><kbd>Space</kbd></span><span>jump</span></span>
         <span class="hint"><span class="pill">Drag</span><span>orbit</span></span>
         <span class="hint"><span class="pill">Scroll</span><span>zoom</span></span>
       </div>
       <div class="actions">
+        <button class="sound" id="soundButton" type="button" aria-pressed="false" aria-label="Play music">
+          <span class="sound-bars" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="sound-label">Music</span>
+        </button>
         <button class="wander" id="wanderButton" type="button" aria-pressed="true">
           <span class="status-dot" aria-hidden="true"></span>
           <span>Wander</span>
         </button>
+        <button class="gallop" id="gallopButton" type="button" aria-pressed="false" aria-label="Gallop">
+          <svg class="gallop-icon" viewBox="0 0 16 12" aria-hidden="true"><path d="M3 2l4 4-4 4M9 2l4 4-4 4" /></svg>
+          <span class="gallop-label">Gallop</span>
+        </button>
         <label class="pace" for="paceInput">
           <span class="pace-label">Pace</span>
-          <input id="paceInput" type="range" min="0.6" max="2.6" step="0.1" value="1.6" aria-label="Walking pace">
-          <output id="paceOutput" for="paceInput">1.6</output>
+          <input id="paceInput" type="range" min="0.6" max="3.4" step="0.1" value="1.4" aria-label="Pace">
+          <output id="paceOutput" for="paceInput">1.4</output>
         </label>
       </div>
     </div>
@@ -62,6 +72,7 @@
     </div>
   </main>
 
+  <audio id="themeAudio" src="assets/opening-theme.mp3" loop preload="auto"></audio>
   <noscript><p class="no-script">This study needs JavaScript to draw the horse.</p></noscript>
   <script type="module" src="horse.js"></script>
 </body>
