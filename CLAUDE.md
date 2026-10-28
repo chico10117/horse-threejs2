@@ -16,7 +16,7 @@ Check changes in a real browser. Look for console errors and horizontal overflow
 
 If the page stays on "Letting the horse in…", a module under `src/` threw before `src/main.js` reached its boot code. The loader covers the page (`z-index: 20`) until `body.is-ready` is added there, so check the console.
 
-`assets/*.mp3` is gitignored. In a fresh clone `assets/opening-theme.mp3` is missing, and the Music button fails silently because the `play()` rejection is caught.
+`assets/opening-theme.mp3` is committed and deployed. If it's missing, the Music button fails silently because the `play()` rejection is caught.
 
 ## Dependencies
 
