@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Running
 
-There is no build step, package.json, linter, or test suite. It's a static page: `index.html` + `styles.css` + `horse.js`, with Three.js r170 vendored at `vendor/three.module.js`.
+There is no build step, package.json, linter, or test suite. It's a static page: `index.html` + `styles.css` + ES modules under `src/` (entry `src/main.js`), with Three.js r170 vendored at `vendor/three.module.js`.
 
 It has to be served over HTTP, because the ES module and import map don't load from `file://`:
 
@@ -14,7 +14,7 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 Check changes in a real browser. Look for console errors and horizontal overflow, and test both desktop and phone sizes (earlier QA used 1440×900, 768×1024, 390×844, and 375×812). The planet's layout uses a seeded PRNG (`random()`, seed 612), so scenery is identical on every load. Dust and smoke jitter use `Math.random()`, and the horse wanders from the moment the page loads, so screenshots taken at different times won't match.
 
-If the page stays on "Letting the horse in…", `horse.js` threw before reaching the boot code at the bottom. The loader covers the page (`z-index: 20`) until `body.is-ready` is added there, so check the console.
+If the page stays on "Letting the horse in…", a module under `src/` threw before `src/main.js` reached its boot code. The loader covers the page (`z-index: 20`) until `body.is-ready` is added there, so check the console.
 
 `assets/*.mp3` is gitignored. In a fresh clone `assets/opening-theme.mp3` is missing, and the Music button fails silently because the `play()` rejection is caught.
 
@@ -23,9 +23,26 @@ If the page stays on "Letting the horse in…", `horse.js` threw before reaching
 - `three` resolves through the import map in `index.html` to `./vendor/three.module.js`. Only the core build is vendored, so `three/addons/...` imports (OrbitControls, BufferGeometryUtils, loaders, etc.) won't resolve. Either vendor the file and add an import-map entry, or write the feature by hand. The orbit camera and `mergeGeometries` are already written by hand for this reason.
 - The only network dependency is Google Fonts (Fraunces and Karla).
 
-## horse.js architecture
+## Architecture
 
-It's a single module of top-level imperative code that builds the scene in this order: renderer → sky frame (sky dome shader, stars, moon sprites, two distant mini-worlds, lights) → planet (a vertex-coloured icosphere plus an atmosphere halo) → scenery → dust/smoke pools → geometry helpers → horse → state and input → camera → animation loop → boot. Everything is procedural. There are no model files.
+`index.html` loads `src/main.js`. Each module is top-level imperative code that shares state through exported, mutated `const` objects (`state`, `gait`, `orbit`, the horse vectors); never reassign another module's export.
+
+- `src/util.js`: math helpers, the seeded `random()`, `randomDirection`, axes, `makeGlowTexture`.
+- `src/core.js`: `renderer`, `scene`, `camera`, `stage`, `prefersReducedMotion`, `PLANET_RADIUS`, `CAMERA_AZIMUTH`.
+- `src/sky.js`: `skyFrame`, sky dome, stars, moon (`placeMoon`), mini-worlds, lights.
+- `src/planet.js`: planet mesh, `planetDirection`/`placeOnPlanet`, `obstacles`, `fadeables`, all scenery.
+- `src/effects.js`: dust and smoke puff pools.
+- `src/geometry.js`: sweeps, tubes, hair ribbons, limbs, `mergeGeometries`.
+- `src/horse/body.js`: materials and the horse rig (torso, tack, neck, head, mane, tail, reins).
+- `src/horse/legs.js`: leg chains and the IK solver.
+- `src/horse/motion.js`: `state`, `pressed`, horse vectors, `GAITS`/`gait`, locomotion, collisions, legs, body animation.
+- `src/camera.js`: viewport framing, orbit input, `updateCamera`, view fades, `resize`.
+- `src/ui.js`: DOM controls, music, keyboard, readout.
+- `src/main.js`: animation loop and boot.
+
+Dependencies point one way: util → core → sky/planet/effects/geometry → body → legs → motion → camera → ui → main. **Import order is load-bearing:** `sky.js` and then `planet.js` consume the seeded `random()` at load, so `main.js` imports them in that order, and no other module that calls `random()` at load may evaluate between them. Changing that order rearranges the planet.
+
+Together they build the scene in this order: renderer → sky frame (sky dome shader, stars, moon sprites, two distant mini-worlds, lights) → planet (a vertex-coloured icosphere plus an atmosphere halo) → scenery → dust/smoke pools → geometry helpers → horse → state and input → camera → animation loop → boot. Everything is procedural. There are no model files.
 
 **The world is a tiny sphere** (`PLANET_RADIUS`). The horse's placement is two unit vectors: `horseUp` (the surface normal) and `horseForward` (a tangent). To move, both vectors rotate about `horseSide` by `speed * dt / R`. To turn, `horseForward` rotates about `horseUp`. `placeHorse()` builds the `horse` group's transform from that basis, so the `horse` group's local space is always the ground frame under her. To place scenery relative to the start point (the north pole), use `planetDirection(arc, bearing)` with `placeOnPlanet()`. Anything solid goes in `obstacles` (`{ direction, radius }`), which `resolveCollisions()` pushes her out of and `avoidObstacles()` steers wander around. Large scenery goes through `makeFadeable()`, which clones its materials so `updateFades()` can fade it when it's between the camera and the horse.
 
@@ -45,7 +62,7 @@ If you change segment lengths or pivots, the rest pose follows automatically.
 
 ## JS ↔ HTML/CSS contract
 
-- `horse.js` looks up elements by id: `stage`, `paceValue`, `paceInput`, `paceOutput`, `gaitValue`, `wanderButton`, `gallopButton`, `soundButton`, `themeAudio`, `loader`, plus `.loader p` for the WebGL error message. Renaming any of these in `index.html` breaks the script. JS sets the slider's starting value from `state.cruise`. Its range (0.6–3.4) spans walk into trot, because trot starts at about 2 m/s.
+- The JS (mostly `src/ui.js`) looks up elements by id: `stage`, `paceValue`, `paceInput`, `paceOutput`, `gaitValue`, `wanderButton`, `gallopButton`, `soundButton`, `themeAudio`, `loader`, plus `.loader p` for the WebGL error message. Renaming any of these in `index.html` breaks the script. JS sets the slider's starting value from `state.cruise`. Its range (0.6–3.4) spans walk into trot, because trot starts at about 2 m/s.
 - Toggle state is stored in `aria-pressed`, and the CSS selects on it (`.wander[aria-pressed="false"]`, `.sound[aria-pressed="true"]`, `.gallop[aria-pressed="true"]`). The Gallop toggle (`state.gallop`) does the same as holding Shift. Change state through that attribute, not through classes.
 - The HTML UI sits on top of the full-bleed `#stage` canvas. `.vignette`, `.masthead`, `.meter`, and `.dock` are `pointer-events: none` so that drags reach the canvas, and only `.actions` turns pointer events back on. Any new interactive overlay needs `pointer-events: auto`, or it won't receive clicks. `#stage` sets `touch-action: none` so orbiting works on touch screens.
 - Text drawn directly over the night sky uses the `--sky-ink*` and `--sky-accent` tokens, with `--sky-shadow`. The cream glass panels (`.meter`, `.actions`, `kbd`, `.pill`) keep the `--ink*` tokens. The `--night` token is the page and loader background.
