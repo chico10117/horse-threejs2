@@ -29,6 +29,7 @@ export const GRAVITY = 15;
 export const BODY_LIFT = 0.08;
 export const JUMP_VELOCITY = 5.4;
 export const HORSE_RADIUS = 0.85;
+const COLLISION_RECOVERY_SPEED = 8;
 
 /* Where she stands on the planet: local up, and the way she faces. */
 export const horseUp = new THREE.Vector3(0, 1, 0);
@@ -105,15 +106,20 @@ export function avoidObstacles() {
   return steer;
 }
 
-export function resolveCollisions() {
+export function resolveCollisions(dt = 1 / 60) {
+  const maxStep = (COLLISION_RECOVERY_SPEED * dt) / PLANET_RADIUS;
   for (const obstacle of obstacles) {
     if (obstacle.height !== undefined && state.height > obstacle.height) continue;
     const angle = horseUp.angleTo(obstacle.direction);
     const minimum = (obstacle.radius + HORSE_RADIUS) / PLANET_RADIUS;
     if (angle >= minimum) continue;
+    if (obstacle.height !== undefined) {
+      toObstacle.copy(obstacle.direction).addScaledVector(horseUp, -obstacle.direction.dot(horseUp));
+      if (toObstacle.lengthSq() < 1e-8 || horseForward.dot(toObstacle) * state.speed < 0) continue;
+    }
     pushAxis.crossVectors(obstacle.direction, horseUp);
     if (pushAxis.lengthSq() < 1e-8) continue;
-    pushRotation.setFromAxisAngle(pushAxis.normalize(), minimum - angle);
+    pushRotation.setFromAxisAngle(pushAxis.normalize(), Math.min(minimum - angle, maxStep));
     horseUp.applyQuaternion(pushRotation);
     horseForward.applyQuaternion(pushRotation);
   }
@@ -153,7 +159,7 @@ export function updateLocomotion(dt, elapsed) {
     horseUp.applyQuaternion(moveRotation);
     horseForward.applyQuaternion(moveRotation);
   }
-  resolveCollisions();
+  resolveCollisions(dt);
   horseUp.normalize();
   horseForward.addScaledVector(horseUp, -horseForward.dot(horseUp)).normalize();
 
