@@ -2,7 +2,7 @@ import { state } from "./horse/motion.js";
 import { legs } from "./horse/legs.js";
 
 const profiles = {
-  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5 },
+  walk: { duration: 0.12, volume: 0.18, frequency: 128, noiseFrequency: 680, noiseVolume: 0.45, noiseQ: 0.5, pitchDrop: 0.65, frontPitch: 1.04, hindPitch: 0.96, frontNoisePitch: 1.03, hindNoisePitch: 0.97 },
   trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6 },
   gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75 },
 };
@@ -46,16 +46,18 @@ function playHoof(leg, profile, intensity) {
   const pan = -leg.side * (leg.front ? 0.18 : 0.3);
   const oscillator = context.createOscillator();
   oscillator.type = "sine";
-  const frequency = profile.frequency * (leg.front ? 1.12 : 0.9) * (0.94 + Math.random() * 0.12);
+  const pitch = leg.front ? profile.frontPitch ?? 1.12 : profile.hindPitch ?? 0.9;
+  const frequency = profile.frequency * pitch * (0.94 + Math.random() * 0.12);
   oscillator.frequency.setValueAtTime(frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.55, now + profile.duration);
+  oscillator.frequency.exponentialRampToValueAtTime(frequency * (profile.pitchDrop ?? 0.55), now + profile.duration);
 
   const noise = context.createBufferSource();
   noise.buffer = noiseBuffer;
   const filter = context.createBiquadFilter();
   filter.type = "bandpass";
-  filter.frequency.value = profile.noiseFrequency * (leg.front ? 1.1 : 0.9);
-  filter.Q.value = 0.7;
+  const noisePitch = leg.front ? profile.frontNoisePitch ?? 1.1 : profile.hindNoisePitch ?? 0.9;
+  filter.frequency.value = profile.noiseFrequency * noisePitch;
+  filter.Q.value = profile.noiseQ ?? 0.7;
   const noiseGain = context.createGain();
   noiseGain.gain.value = profile.noiseVolume;
 
