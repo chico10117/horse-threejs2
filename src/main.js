@@ -9,6 +9,7 @@ import { dust, particlesEnabled, smoke, updatePuffs, updateSmoke } from "./effec
 import "./geometry.js";
 import "./horse/body.js";
 import "./horse/legs.js";
+import { updateHoofbeats } from "./audio.js";
 import { horseUp, land, updateBody, updateGait, updateLegs, updateLocomotion, updateReins } from "./horse/motion.js";
 import { resize, updateCamera, updateFades } from "./camera.js";
 import { updateReadout } from "./ui.js";
@@ -28,6 +29,7 @@ function animate() {
   updateGait(dt);
   updateBody(dt, elapsed);
   updateLegs();
+  updateHoofbeats();
   updateReins();
   updatePrince(elapsed, dt, horseUp);
   if (particlesEnabled) updateSmoke(dt);
