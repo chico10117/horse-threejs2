@@ -2,15 +2,68 @@ import { state } from "./horse/motion.js";
 import { legs } from "./horse/legs.js";
 
 const profiles = {
-  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5 },
-  trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6 },
-  gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75 },
+  walk: { rate: 1.1, volume: 0.22 },
+  trot: { rate: 1.0, volume: 0.32 },
+  gallop: { rate: 0.9, volume: 0.44 },
 };
 
 let context = null;
 let master = null;
-let noiseBuffer = null;
+let hoofBuffers = null;
 let lastStance = null;
+
+function createHoofBuffer(audioContext) {
+  const sampleRate = audioContext.sampleRate;
+  const length = Math.floor(sampleRate * 0.18);
+  const buffer = audioContext.createBuffer(1, length, sampleRate);
+  const data = buffer.getChannelData(0);
+  const partials = [
+    [1720, 0.5, 40],
+    [2490, 0.4, 48],
+    [3670, 0.32, 55],
+    [4980, 0.22, 64],
+    [6410, 0.14, 74],
+    [8230, 0.08, 90],
+  ].map(([frequency, amplitude, decay]) => ({
+    frequency: frequency * (1 + (Math.random() - 0.5) * 0.04),
+    amplitude,
+    decay,
+    phase: Math.random() * Math.PI * 2,
+  }));
+
+  const filterFrequency = 2 * Math.sin((Math.PI * 3100) / sampleRate);
+  let previousNoise = 0;
+  let highpassed = 0;
+  let lowpassed = 0;
+  let bandpassed = 0;
+  let peak = 0;
+  for (let i = 0; i < length; i += 1) {
+    const t = i / sampleRate;
+    const attack = Math.min(1, t / 0.0015);
+    const noise = Math.random() * 2 - 1;
+    highpassed = 0.92 * (highpassed + noise - previousNoise);
+    previousNoise = noise;
+    lowpassed += filterFrequency * bandpassed;
+    const high = noise - lowpassed - 0.35 * bandpassed;
+    bandpassed += filterFrequency * high;
+
+    let sample = Math.sin(2 * Math.PI * 118 * t) * Math.exp(-t * 45) * 0.3;
+    sample += highpassed * Math.exp(-t * 220) * 0.45;
+    sample += bandpassed * Math.exp(-t * 50) * 0.14;
+    for (const partial of partials) {
+      sample += Math.sin(2 * Math.PI * partial.frequency * t + partial.phase)
+        * Math.exp(-t * partial.decay)
+        * partial.amplitude;
+    }
+    sample *= attack;
+    data[i] = sample;
+    peak = Math.max(peak, Math.abs(sample));
+  }
+
+  const scale = peak > 0 ? 0.92 / peak : 1;
+  for (let i = 0; i < length; i += 1) data[i] *= scale;
+  return buffer;
+}
 
 function unlockAudio() {
   if (!context) {
@@ -26,11 +79,7 @@ function unlockAudio() {
     compressor.attack.value = 0.003;
     compressor.release.value = 0.2;
     master.connect(compressor).connect(context.destination);
-
-    const length = Math.floor(context.sampleRate);
-    noiseBuffer = context.createBuffer(1, length, context.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
+    hoofBuffers = [createHoofBuffer(context), createHoofBuffer(context), createHoofBuffer(context)];
   }
   if (context.state === "suspended") context.resume();
 }
@@ -39,56 +88,35 @@ window.addEventListener("pointerdown", unlockAudio, { capture: true, passive: tr
 window.addEventListener("keydown", unlockAudio, { capture: true });
 
 function playHoof(leg, profile, intensity) {
-  if (!context || context.state !== "running" || !noiseBuffer) return;
+  if (!context || context.state !== "running" || !hoofBuffers) return;
 
   const now = context.currentTime + 0.001;
-  const level = profile.volume * (0.55 + intensity * 0.65) * (0.9 + Math.random() * 0.2) * (leg.front ? 0.9 : 1);
+  const source = context.createBufferSource();
+  source.buffer = hoofBuffers[Math.floor(Math.random() * hoofBuffers.length)];
+  source.playbackRate.value = profile.rate * (0.95 + Math.random() * 0.1);
+
+  const gain = context.createGain();
+  gain.gain.value = profile.volume
+    * (0.55 + intensity * 0.65)
+    * (0.9 + Math.random() * 0.2)
+    * (leg.front ? 0.92 : 1);
+
   const pan = -leg.side * (leg.front ? 0.18 : 0.3);
-  const oscillator = context.createOscillator();
-  oscillator.type = "sine";
-  const frequency = profile.frequency * (leg.front ? 1.12 : 0.9) * (0.94 + Math.random() * 0.12);
-  oscillator.frequency.setValueAtTime(frequency, now);
-  oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.55, now + profile.duration);
-
-  const noise = context.createBufferSource();
-  noise.buffer = noiseBuffer;
-  const filter = context.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = profile.noiseFrequency * (leg.front ? 1.1 : 0.9);
-  filter.Q.value = 0.7;
-  const noiseGain = context.createGain();
-  noiseGain.gain.value = profile.noiseVolume;
-
-  const hit = context.createGain();
-  hit.gain.setValueAtTime(0.0001, now);
-  hit.gain.exponentialRampToValueAtTime(level, now + 0.004);
-  hit.gain.exponentialRampToValueAtTime(0.0001, now + profile.duration);
-
-  oscillator.connect(hit);
-  noise.connect(filter).connect(noiseGain).connect(hit);
-
   let panner = null;
   if (context.createStereoPanner) {
     panner = context.createStereoPanner();
     panner.pan.value = pan;
-    hit.connect(panner).connect(master);
+    source.connect(gain).connect(panner).connect(master);
   } else {
-    hit.connect(master);
+    source.connect(gain).connect(master);
   }
 
-  oscillator.onended = () => {
-    oscillator.disconnect();
-    noise.disconnect();
-    filter.disconnect();
-    noiseGain.disconnect();
-    hit.disconnect();
+  source.onended = () => {
+    source.disconnect();
+    gain.disconnect();
     if (panner) panner.disconnect();
   };
-
-  oscillator.start(now);
-  oscillator.stop(now + profile.duration + 0.02);
-  noise.start(now, Math.random() * 0.8, profile.duration);
-  noise.stop(now + profile.duration + 0.02);
+  source.start(now);
 }
 
 export function updateHoofbeats() {
