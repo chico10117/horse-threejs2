@@ -60,8 +60,11 @@
         </button>
         <label class="pace" for="paceInput">
           <span class="pace-label">Pace</span>
-          <input id="paceInput" type="range" min="0.6" max="3.4" step="0.1" value="1.4" aria-label="Pace">
-          <output id="paceOutput" for="paceInput">1.4</output>
+          <input id="paceInput" type="range" min="0.6" max="3.4" step="0.1" value="1.4" aria-label="Pace in meters per second">
+          <span class="pace-readout">
+            <output id="paceOutput" for="paceInput">1.4</output>
+            <span class="pace-unit">m/s</span>
+          </span>
         </label>
       </div>
     </div>
