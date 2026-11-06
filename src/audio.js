@@ -2,9 +2,9 @@ import { state } from "./horse/motion.js";
 import { legs } from "./horse/legs.js";
 
 const profiles = {
-  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5, metalVolume: 0.1, metalRate: 1.06 },
-  trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6, metalVolume: 0.14, metalRate: 1.0 },
-  gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75, metalVolume: 0.18, metalRate: 0.94 },
+  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5, metalVolume: 0.1, metalRate: 1.0 },
+  trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6, metalVolume: 0.14, metalRate: 0.94 },
+  gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75, metalVolume: 0.18, metalRate: 0.88 },
 };
 
 let context = null;
@@ -18,9 +18,10 @@ function createMetalBuffer(audioContext) {
   const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
   const data = buffer.getChannelData(0);
   const partials = [
-    [3100, 0.5, 0.05],
-    [4600, 0.32, 0.055],
-    [6200, 0.16, 0.06],
+    [1050, 0.5, 0.055],
+    [1700, 0.35, 0.06],
+    [2550, 0.2, 0.065],
+    [3400, 0.1, 0.07],
   ].map(([frequency, amplitude, decay]) => ({
     frequency: frequency * (1 + (Math.random() - 0.5) * 0.04),
     amplitude,
