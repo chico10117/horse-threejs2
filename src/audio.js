@@ -2,53 +2,15 @@ import { state } from "./horse/motion.js";
 import { legs } from "./horse/legs.js";
 
 const profiles = {
-  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5, metalVolume: 0.1, metalRate: 1.0 },
-  trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6, metalVolume: 0.14, metalRate: 0.94 },
-  gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75, metalVolume: 0.18, metalRate: 0.88 },
+  walk: { duration: 0.13, volume: 0.2, frequency: 150, noiseFrequency: 900, noiseVolume: 0.5 },
+  trot: { duration: 0.14, volume: 0.32, frequency: 122, noiseFrequency: 740, noiseVolume: 0.6 },
+  gallop: { duration: 0.17, volume: 0.48, frequency: 96, noiseFrequency: 560, noiseVolume: 0.75 },
 };
 
 let context = null;
 let master = null;
 let noiseBuffer = null;
-let metalBuffers = null;
 let lastStance = null;
-
-function createMetalBuffer(audioContext) {
-  const length = Math.floor(audioContext.sampleRate * 0.12);
-  const buffer = audioContext.createBuffer(1, length, audioContext.sampleRate);
-  const data = buffer.getChannelData(0);
-  const partials = [
-    [1050, 0.5, 0.055],
-    [1700, 0.35, 0.06],
-    [2550, 0.2, 0.065],
-    [3400, 0.1, 0.07],
-  ].map(([frequency, amplitude, decay]) => ({
-    frequency: frequency * (1 + (Math.random() - 0.5) * 0.04),
-    amplitude,
-    decay,
-    phase: Math.random() * Math.PI * 2,
-  }));
-
-  let peak = 0;
-  for (let i = 0; i < length; i += 1) {
-    const t = i / audioContext.sampleRate;
-    const attack = Math.min(1, t / 0.0015);
-    const ring = attack * Math.exp(-t / 0.035);
-    let sample = 0;
-    for (const partial of partials) {
-      sample += Math.sin(2 * Math.PI * partial.frequency * t + partial.phase)
-        * partial.amplitude
-        * Math.exp(-t / partial.decay);
-    }
-    sample *= ring;
-    data[i] = sample;
-    peak = Math.max(peak, Math.abs(sample));
-  }
-
-  const scale = peak > 0 ? 0.8 / peak : 1;
-  for (let i = 0; i < length; i += 1) data[i] *= scale;
-  return buffer;
-}
 
 function unlockAudio() {
   if (!context) {
@@ -69,7 +31,6 @@ function unlockAudio() {
     noiseBuffer = context.createBuffer(1, length, context.sampleRate);
     const data = noiseBuffer.getChannelData(0);
     for (let i = 0; i < length; i += 1) data[i] = Math.random() * 2 - 1;
-    metalBuffers = [createMetalBuffer(context), createMetalBuffer(context), createMetalBuffer(context)];
   }
   if (context.state === "suspended") context.resume();
 }
@@ -106,26 +67,13 @@ function playHoof(leg, profile, intensity) {
   oscillator.connect(hit);
   noise.connect(filter).connect(noiseGain).connect(hit);
 
-  let metalSource = null;
-  let metalGain = null;
-  if (metalBuffers) {
-    metalSource = context.createBufferSource();
-    metalSource.buffer = metalBuffers[Math.floor(Math.random() * metalBuffers.length)];
-    metalSource.playbackRate.value = profile.metalRate * (0.97 + Math.random() * 0.06);
-    metalGain = context.createGain();
-    metalGain.gain.value = profile.metalVolume * (0.6 + intensity * 0.6) * (0.9 + Math.random() * 0.2);
-  }
-
   let panner = null;
   if (context.createStereoPanner) {
     panner = context.createStereoPanner();
     panner.pan.value = pan;
-    hit.connect(panner);
-    if (metalGain) metalGain.connect(panner);
-    panner.connect(master);
+    hit.connect(panner).connect(master);
   } else {
     hit.connect(master);
-    if (metalGain) metalGain.connect(master);
   }
 
   oscillator.onended = () => {
@@ -136,15 +84,6 @@ function playHoof(leg, profile, intensity) {
     hit.disconnect();
     if (panner) panner.disconnect();
   };
-
-  if (metalSource && metalGain) {
-    metalSource.connect(metalGain);
-    metalSource.onended = () => {
-      metalSource.disconnect();
-      metalGain.disconnect();
-    };
-    metalSource.start(now);
-  }
 
   oscillator.start(now);
   oscillator.stop(now + profile.duration + 0.02);
