@@ -107,6 +107,7 @@ export function avoidObstacles() {
 
 export function resolveCollisions() {
   for (const obstacle of obstacles) {
+    if (obstacle.height !== undefined && state.height > obstacle.height) continue;
     const angle = horseUp.angleTo(obstacle.direction);
     const minimum = (obstacle.radius + HORSE_RADIUS) / PLANET_RADIUS;
     if (angle >= minimum) continue;

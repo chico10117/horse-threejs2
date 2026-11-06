@@ -298,7 +298,7 @@ layout.volcanoes.forEach((spec) => {
   }
 
   scene.add(makeFadeable(castAndReceive(placeOnPlanet(group, spec.direction, spec.scale * 3)), spec.direction, 0.8 * spec.scale, 0.6 * spec.scale));
-  obstacles.push({ direction: spec.direction, radius: 0.7 * spec.scale });
+  obstacles.push({ direction: spec.direction, radius: 0.7 * spec.scale, height: 0.54 * spec.scale });
 
   if (spec.active) {
     smokeVents.push({
@@ -377,7 +377,7 @@ layout.volcanoes.forEach((spec) => {
     child.castShadow = true;
   });
   scene.add(placeOnPlanet(group, layout.rose, 0.4));
-  obstacles.push({ direction: layout.rose, radius: 0.32 });
+  obstacles.push({ direction: layout.rose, radius: 0.32, height: 0.48 });
 }
 
 export function sphereLowGeometry() {
@@ -398,7 +398,7 @@ for (const [arc, bearing, scale] of [[5.1, 2.0, 0.6], [7.6, 5.2, 0.7], [15.5, 1.
   }
   const direction = planetDirection(arc, bearing);
   scene.add(makeFadeable(castAndReceive(placeOnPlanet(bush, direction, arc)), direction, 0.9 * scale, 0.8 * scale));
-  obstacles.push({ direction, radius: 0.7 * scale });
+  obstacles.push({ direction, radius: 0.7 * scale, height: 1.36 * scale });
 }
 
 for (let i = 0; i < 9; i += 1) {
