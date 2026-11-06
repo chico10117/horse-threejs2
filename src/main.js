@@ -4,11 +4,12 @@ import * as THREE from "three";
 import { camera, renderer, scene } from "./core.js";
 import { stars } from "./sky.js";
 import "./planet.js";
+import { updatePrince } from "./prince.js";
 import { dust, particlesEnabled, smoke, updatePuffs, updateSmoke } from "./effects.js";
 import "./geometry.js";
 import "./horse/body.js";
 import "./horse/legs.js";
-import { land, updateBody, updateGait, updateLegs, updateLocomotion, updateReins } from "./horse/motion.js";
+import { horseUp, land, updateBody, updateGait, updateLegs, updateLocomotion, updateReins } from "./horse/motion.js";
 import { resize, updateCamera, updateFades } from "./camera.js";
 import { updateReadout } from "./ui.js";
 
@@ -28,6 +29,7 @@ function animate() {
   updateBody(dt, elapsed);
   updateLegs();
   updateReins();
+  updatePrince(elapsed, dt, horseUp);
   if (particlesEnabled) updateSmoke(dt);
   updatePuffs(dust, dt);
   updatePuffs(smoke, dt);

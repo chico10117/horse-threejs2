@@ -69,3 +69,4 @@ If you change segment lengths or pivots, the rest pose follows automatically.
 - After two animation frames, `body.is-ready` is added. That triggers the entrance transitions for `.masthead`, `.meter`, and `.dock`, which start at `opacity: 0`, and hides the loader. A new overlay that copies that starting style also needs its own `.is-ready` rule. `#stage.is-dragging` sets the cursor. JS writes the slider fill to the `--fill` custom property on `#paceInput`.
 - Under `prefers-reduced-motion`, JS starts with wander off and creates no dust or volcano smoke, and stars don't twinkle. CSS skips the entrance animations.
 - Keyboard: any movement key (WASD or arrows) turns wander off. Space jumps, unless focus is on a button or link. Either Shift gallops. Buttons and the slider blur on `pointerup` (when `event.detail > 0`) so that keys keep reaching the window.
+claude --resume 6b98c000-0d02-49e5-9200-b4f33266c846
